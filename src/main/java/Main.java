@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class Main {
@@ -16,8 +17,8 @@ public class Main {
     public static void zipFiles(String pathZip, String[] pathFile) {
         try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(pathZip))) {
             for (int i = 0; i < pathFile.length; i++) {
-                try (FileInputStream fis = new FileInputStream(String.valueOf(pathFile[i]))) {
-                    ZipEntry entry = new ZipEntry(String.valueOf(i));
+                try (FileInputStream fis = new FileInputStream(pathFile[i])) {
+                    ZipEntry entry = new ZipEntry("save" + (i + 1) + ".dat");
                     zout.putNextEntry(entry);
                     byte[] buffer = new byte[fis.available()];
                     fis.read(buffer);
@@ -30,6 +31,36 @@ public class Main {
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
+    }
+
+    public static void openZip(String pathZip, String pathFile) {
+        try (ZipInputStream zin = new ZipInputStream(new FileInputStream(pathZip))) {
+            ZipEntry entry;
+            String name;
+            while ((entry = zin.getNextEntry()) != null) {
+                name = entry.getName();
+                FileOutputStream fout = new FileOutputStream(pathFile + name);
+                for (int c = zin.read(); c != -1; c = zin.read()) {
+                    fout.write(c);
+                }
+                fout.flush();
+                zin.closeEntry();
+                fout.close();
+            }
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    public static GameProgress openProgress(String pathProgress) {
+        GameProgress objProgress = null;
+        try (FileInputStream fis = new FileInputStream(pathProgress);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+            objProgress = (GameProgress) ois.readObject();
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+        }
+        return objProgress;
     }
 
     public static void main(String[] args) {
@@ -47,6 +78,7 @@ public class Main {
         saveGame(path3, obj3);
 
         String pathZip = "/Users/vodnik/Documents/Games/savegames/saveZip.zip";
+
         String[] pathFile = {path1, path2, path3};
         zipFiles(pathZip, pathFile);
 
@@ -56,5 +88,13 @@ public class Main {
         path1_2.delete();
         File path1_3 = new File("/Users/vodnik/Documents/Games/savegames/save3.dat");
         path1_3.delete();
+
+        String pathFileOpen = "/Users/vodnik/Documents/Games/savegames/";
+
+        openZip(pathZip, pathFileOpen);
+
+        System.out.println(openProgress(path3));
+
+
     }
 }
